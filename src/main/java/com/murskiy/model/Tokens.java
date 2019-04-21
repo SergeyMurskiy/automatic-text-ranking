@@ -8,7 +8,7 @@ public class Tokens {
     @Id
     private long id;
     private String topic;
-    private String token;
+    private String term;
     private long count;
 
     public String getTopic() {
@@ -19,12 +19,12 @@ public class Tokens {
         this.topic = topic;
     }
 
-    public String getToken() {
-        return token;
+    public String getTerm() {
+        return term;
     }
 
-    public void setToken(String name) {
-        this.token = name;
+    public void setTerm(String name) {
+        this.term = name;
     }
 
     public long getCount() {
@@ -43,12 +43,21 @@ public class Tokens {
         this.id = id;
     }
 
-    public Tokens(Long id, String topic, String token, long count) {
+    public Tokens(Long id, String topic, String term, long count) {
         this.id = id;
         this.topic = topic;
-        this.token = token;
+        this.term = term;
         this.count = count;
     }
     public Tokens(){};
+
+    public void incrementCount() {
+        this.count++;
+    }
+
+    public void addCount(long n) {
+        this.count += n;
+    }
+
 }
 

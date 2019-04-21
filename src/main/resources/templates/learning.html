@@ -1,0 +1,39 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Обучение</title>
+</head>
+<body>
+<style>
+    #content {
+        height: 200px;
+        width: 300px;
+        border: 3px solid black;
+        border-radius: 5px;
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 100px;
+        left: 0;
+        margin: auto;
+    }
+
+    #form {
+        text-align: center;
+    }
+</style>
+<div id="content">
+    <a href="analyze.html">Анализ документа</a>
+    <div id="form">
+        <h2>Обучение</h2>
+        <form action="http://localhost:8080/learning/" enctype="multipart/form-data" method="post">
+            <label>Тема</label>
+            <input type="text" name="topic"><br><br>
+            <input type="file" name="files" webkitdirectory directory multiple/><br><br>
+            <input type="submit" value="Сохранить">
+        </form>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Анализ</title>
+</head>
+<body>
+<style>
+    #content {
+        height: 200px;
+        width: 300px;
+        border: 3px solid black;
+        border-radius: 5px;
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 100px;
+        left: 0;
+        margin: auto;
+    }
+
+    #form {
+        text-align: center;
+    }
+
+</style>
+<div id="content">
+    <a href="learning.html">Обучение</a>
+    <div id="form">
+        <h2>Анализ документа</h2>
+        <!--Анализ нескольких документов сразу-->
+        <!--<form action="http://localhost:8080/analyze/all" enctype="multipart/form-data" method="post">-->
+            <!--<input type="file" name="files" webkitdirectory directory multiple><br><br>-->
+            <!--<input type="submit" value="Проанализировать">-->
+        <!--</form>-->
+        <form action="http://localhost:8080/analyze/" enctype="multipart/form-data" method="post">
+            <input type="file" name="file"><br><br>
+            <input type="submit" value="Проанализировать">
+        </form>
+    </div>
+</div>
+</body>
+</html>

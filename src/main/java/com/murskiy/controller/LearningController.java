@@ -1,121 +1,83 @@
 package com.murskiy.controller;
 
-import com.murskiy.builder.SearchQueryBuilder;
-import com.murskiy.model.Documents;
 import com.murskiy.model.Tokens;
-import com.murskiy.repository.DocumentsRepository;
+import com.murskiy.model.Topics;
 import com.murskiy.repository.TokensRepository;
-import org.elasticsearch.action.admin.indices.analyze.AnalyzeRequest;
-import org.elasticsearch.action.admin.indices.analyze.AnalyzeResponse;
+import com.murskiy.repository.TopicsRepository;
+import com.murskiy.search_service.SearchService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.io.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-import java.util.Scanner;
 
+@CrossOrigin
 @RestController
 @RequestMapping(value = "/learning")
 public class LearningController {
     @Autowired
-    TokensRepository tokensRepository;
+    private SearchService searchService;
 
     @Autowired
-    SearchQueryBuilder searchQueryBuilder;
+    private TokensRepository tokensRepository;
 
     @Autowired
-    DocumentsRepository documentsRepository;
+    private TopicsRepository topicsRepository;
 
-    @Autowired
-    ElasticsearchTemplate elasticsearchTemplate;
+    @RequestMapping(value = "/", method = RequestMethod.POST)
+    public String learningAllFiles(@RequestParam("topic") String topic,
+                                   @RequestParam("files") MultipartFile[] files) throws IOException {
 
-    @GetMapping(value = "/all/{topic}")
-    public String getAllFiles(@PathVariable final String topic) throws IOException {
-        File dir = new File("file_to_upload");
-        File[] listOfFiles = dir.listFiles();
+        long start = System.currentTimeMillis();
 
-        String nameOfFile;
-        String pathToFile;
-        String documentContent;
-        long currentDocId = getCurrentId("document");
-        long currentTokenId = getCurrentId("token");
+        ArrayList<Tokens> tokensToSave = new ArrayList<>();
 
-        AnalyzeRequest request;
-        List<AnalyzeResponse.AnalyzeToken> tokens;
+        long analyzedWordsCount = 0;
 
-        for (int i = 0; i < listOfFiles.length; i++) {
-            nameOfFile = listOfFiles[i].getName();
-            if (nameOfFile.equals(".DS_Store")) {
-                continue;
-            }
-            pathToFile = "file_to_upload/" + nameOfFile;
-            documentContent = getDocumentsContent(pathToFile);
-            Documents newDocument = new Documents(currentDocId++, topic, nameOfFile.split("\\.")[0], documentContent);
-            documentsRepository.save(newDocument);
-
-            request = new AnalyzeRequest();
-            request.text(documentContent);
-            request.analyzer("russian");
-            tokens = elasticsearchTemplate.getClient().admin().indices().analyze(request).actionGet().getTokens();
-            String term;
-            List<Tokens> checkToken;
-            for (int j = 0; j < tokens.size(); j++) {
-                term = tokens.get(j).getTerm();
-                checkToken = searchQueryBuilder.getAll(topic, term);
-                if (checkToken.isEmpty()) {
-                    Tokens newToken = new Tokens(currentTokenId++, topic, term, 1);
-                    tokensRepository.save(newToken);
-                } else {
-                    checkToken.get(0).setCount(checkToken.get(0).getCount() + 1);
-                    tokensRepository.save(checkToken);
-                }
-            }
+        for (MultipartFile file : files) {
+            Collection<Tokens> analyzedTokens = searchService.createTokens(topic, file);
+            analyzedWordsCount += analyzedTokens.size();
+            tokensToSave.addAll(getNewTokens(analyzedTokens, topic));
         }
 
-        putCurrentId("document" , currentDocId);
-        putCurrentId("token", currentTokenId);
-        return "Success!";
+        Topics learningTopic = topicsRepository.findByName(topic);
+
+        if (learningTopic == null) {
+            learningTopic = new Topics(topic, analyzedWordsCount);
+        } else {
+            learningTopic.addWorldCount(analyzedWordsCount);
+        }
+
+        topicsRepository.save(learningTopic);
+        tokensRepository.save(tokensToSave);
+
+        long end = System.currentTimeMillis();
+
+        return response((end - start));
     }
 
-    private String getDocumentsContent(String pathToFile) throws IOException {
-        BufferedReader reader = new BufferedReader(new FileReader(pathToFile));
-        String line = null;
-        String ls = System.getProperty("line.separator");
-        StringBuilder stringBuilder = new StringBuilder();
-        try {
-            while((line = reader.readLine()) != null) {
-                stringBuilder.append(line);
-                stringBuilder.append(ls);
+    private ArrayList<Tokens> getNewTokens(Collection<Tokens> analyzedTokens, String topic) {
+        ArrayList<Tokens> newTokens = new ArrayList<>();
+
+        for (Tokens analyzedToken : analyzedTokens) {
+            String term = analyzedToken.getTerm();
+
+            List<Tokens> checkToken = searchService.getTokenByTopicAndTerm(topic, term);
+            if (checkToken.isEmpty()) {
+                newTokens.add(analyzedToken);
+            } else {
+                Tokens existToken = checkToken.get(0);
+                existToken.addCount(analyzedToken.getCount());
+                newTokens.add(existToken);
             }
-        } finally {
-            reader.close();
         }
-        return stringBuilder.toString();
+        return newTokens;
     }
 
-    private long getCurrentId(String type) throws IOException{
-        if (type.equals("token")) {
-            Scanner input = new Scanner(new File("token_id.txt"));
-            return input.nextLong();
-        } else if (type.equals("document")) {
-            Scanner input = new Scanner(new File("doc_id.txt"));
-            return input.nextLong();
-        }
-        return 0;
-    }
-
-    private void putCurrentId(String type, long currentId) throws IOException{
-        if (type.equals("token")) {
-
-            FileWriter writer = new FileWriter("token_id.txt", false);
-            writer.write(Long.toString(currentId));
-            writer.flush();
-
-        } else if (type.equals("document")) {
-            FileWriter writer = new FileWriter("doc_id.txt", false);
-            writer.write(Long.toString(currentId));
-            writer.flush();
-        }
+    private String response(long time) {
+        return "Success! " + time + "нc.";
     }
 }
