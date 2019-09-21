@@ -1,6 +1,7 @@
 package com.murskiy.controller;
 
 import com.murskiy.model.AnalyzedDocumentTokens;
+import com.murskiy.model.SearchResponse;
 import com.murskiy.model.Tokens;
 import com.murskiy.model.Topics;
 import com.murskiy.repository.TopicsRepository;
@@ -33,16 +34,16 @@ public class AnalyzeController {
 
         long start = System.currentTimeMillis();
 
-        Collection<AnalyzedDocumentTokens> analyzedTokens = searchService.createAnalyzedDocumentTokens(file);
+        SearchResponse<AnalyzedDocumentTokens> analyzedTokens = searchService.createAnalyzedDocumentTokens(file);
 
-        this.documentsWordsCount = analyzedTokens.size();
+        this.documentsWordsCount = analyzedTokens.getWordsCount();
         this.topicsWordCount = getTopicsWordCount();
 
-        Collection<ResponseElement> result = getResult(analyzedTokens);
+        Collection<ResponseElement> result = getResult(analyzedTokens.getTokens());
 
         long end = System.currentTimeMillis();
 
-        return response(result, (end - start), analyzedTokens.size());
+        return response(result, (end - start), analyzedTokens.getWordsCount());
     }
 
     @RequestMapping(value = "/all", method = RequestMethod.POST)
@@ -70,10 +71,20 @@ public class AnalyzeController {
         String topic = findTokens.get(0).getTopic();
 
         double minValue = Math.abs((double) token.getCount() / this.documentsWordsCount - (double) findTokens.get(0).getCount() / this.topicsWordCount.get(topic));
-
+        if (topic.equals("medicine")) {
+            minValue *= 1.0 / (2763296.0 / 2573648);
+        } else if (topic.equals("economic")) {
+            minValue *= 1.0 /(2818070.0 / 2573648);
+        }
         for (Tokens findToken : findTokens) {
-            double value = Math.abs((double) token.getCount() / this.documentsWordsCount - (double) findToken.getCount() / this.topicsWordCount.get(findToken.getTopic()));
-            System.out.println(minValue);
+            double value = 0;
+            value = Math.abs((double) token.getCount() / this.documentsWordsCount - (double) findToken.getCount() / this.topicsWordCount.get(findToken.getTopic()));
+
+            if (findToken.getTopic().equals("medicine")) {
+                value *= 1.0 /(2763296.0 / 2573648);
+            } else if (findToken.getTopic().equals("economic")) {
+                value *= 1.0 /(2818070.0 / 2573648);
+            }
             if (value <= minValue) {
                 minValue = value;
                 topic = findToken.getTopic();
@@ -111,13 +122,13 @@ public class AnalyzeController {
     private String response(Collection<ResponseElement> result, long time, long sizeOfAnalyzedTokens) {
 
         StringBuilder response = new StringBuilder(
-                "Токенов в анализируемом документе:   " + sizeOfAnalyzedTokens + "\n" +
-                "Время:  " + time + " нс.\n" +
-                "Результаты: \n" );
+                "Токенов в анализируемом документе:   " + sizeOfAnalyzedTokens + "<br>" +
+                "Время:  " + time + " нс.<br>" +
+                "Результаты: <br>" );
         for (ResponseElement row : result) {
-            response.append("\n").append(row.topic).append(" ").append(row.count);
+            response.append("<br>").append(row.topic).append(" ").append(row.count);
         }
-        response.append("\n_____________________________________________________________________________________________\n\n");
+        response.append("<br>_____________________________________________________________________________________________<br><br>");
         return response.toString();
     }
 

@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 public class SearchQueryBuilder {
     public NativeSearchQuery getTokensByTermQuery(String term) {
         QueryBuilder query = QueryBuilders.boolQuery()
-                .must(
+                .should(
                         QueryBuilders.termQuery("term", term)
                 );
 

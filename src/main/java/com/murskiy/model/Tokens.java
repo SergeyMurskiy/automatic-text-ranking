@@ -49,7 +49,7 @@ public class Tokens {
         this.term = term;
         this.count = count;
     }
-    public Tokens(){};
+    public Tokens(){}
 
     public void incrementCount() {
         this.count++;

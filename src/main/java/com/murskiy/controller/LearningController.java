@@ -1,5 +1,6 @@
 package com.murskiy.controller;
 
+import com.murskiy.model.SearchResponse;
 import com.murskiy.model.Tokens;
 import com.murskiy.model.Topics;
 import com.murskiy.repository.TokensRepository;
@@ -10,9 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 @CrossOrigin
 @RestController
@@ -33,14 +32,26 @@ public class LearningController {
 
         long start = System.currentTimeMillis();
 
-        ArrayList<Tokens> tokensToSave = new ArrayList<>();
+        Map<String, Tokens> tokensToSave = new HashMap<>();
+       // ArrayList<Tokens> tokensToSave = new ArrayList<>();
 
         long analyzedWordsCount = 0;
 
         for (MultipartFile file : files) {
-            Collection<Tokens> analyzedTokens = searchService.createTokens(topic, file);
-            analyzedWordsCount += analyzedTokens.size();
-            tokensToSave.addAll(getNewTokens(analyzedTokens, topic));
+            SearchResponse<Tokens> analyzedTokens = searchService.createTokens(topic, file);
+            analyzedWordsCount += analyzedTokens.getWordsCount();
+
+            for (Tokens analyzedToken : analyzedTokens.getTokens()) {
+                String term = analyzedToken.getTerm();
+
+                Tokens checkToken = tokensToSave.get(term);
+                if (checkToken == null) {
+                    tokensToSave.put(term, analyzedToken);
+                } else {
+                    checkToken.setCount(checkToken.getCount() + analyzedToken.getCount());
+                }
+            }
+            //tokensToSave.addAll(getNewTokens(analyzedTokens.getTokens(), topic));
         }
 
         Topics learningTopic = topicsRepository.findByName(topic);
@@ -52,7 +63,7 @@ public class LearningController {
         }
 
         topicsRepository.save(learningTopic);
-        tokensRepository.save(tokensToSave);
+        tokensRepository.save(tokensToSave.values());
 
         long end = System.currentTimeMillis();
 

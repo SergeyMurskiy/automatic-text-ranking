@@ -15,7 +15,6 @@ import java.io.IOException;
 @EnableElasticsearchRepositories(basePackages = "com.murskiy.repository")
 public class ElasticConfiguration {
 
-
     @Bean
     public NodeBuilder nodeBuilder() {
         return new NodeBuilder();

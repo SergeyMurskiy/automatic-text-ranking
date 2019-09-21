@@ -8,10 +8,6 @@ public class AnalyzedDocumentTokens {
         return term;
     }
 
-    public void setTerm(String term) {
-        this.term = term;
-    }
-
     public int getCount() {
         return count;
     }
@@ -20,14 +16,8 @@ public class AnalyzedDocumentTokens {
         count++;
     }
 
-    public void setCount(int count) {
-        this.count = count;
-    }
-
     public AnalyzedDocumentTokens(String term, int count) {
         this.term = term;
         this.count = count;
     }
-
-    public AnalyzedDocumentTokens() {};
 }
