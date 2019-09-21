@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @RestController
-@RequestMapping(value = "/tokens")
+@RequestMapping(value = "/*")
 public class SearchTokens {
 
     @Autowired
